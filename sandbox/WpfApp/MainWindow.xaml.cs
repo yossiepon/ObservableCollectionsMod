@@ -1,4 +1,5 @@
 ﻿using ObservableCollections;
+using ObservableCollections.Mod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,19 +24,16 @@ namespace WpfApp
     public partial class MainWindow : Window
     {
         ObservableList<int> list;
-        public ISynchronizedView<int, int> ItemsView { get; set; }
+        public IFilterlessSynchronizedView<int, string> ItemsView { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
             this.DataContext = this;
 
-
-
-
             list = new ObservableList<int>();
             list.AddRange(new[] { 1, 10, 188 });
-            ItemsView = list.CreateSortedView(x => x, x => x, comparer: Comparer<int>.Default).WithINotifyCollectionChanged();
+            ItemsView = list.CreateFilterlessView(x => $"{x}$").WithINotifyCollectionChanged();
 
 
             BindingOperations.EnableCollectionSynchronization(ItemsView, new object());
