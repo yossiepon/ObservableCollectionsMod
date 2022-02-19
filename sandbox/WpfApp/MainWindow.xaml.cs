@@ -23,22 +23,29 @@ namespace WpfApp
     public partial class MainWindow : Window
     {
         ObservableList<int> list;
-        public ISynchronizedView<int, int> ItemsView { get; set; }
+        public ISynchronizedSingleView<int, string> ItemsView { get; set; }
+        public ISynchronizedSingleView<int, Item> ItemsViewForDataGrid { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
             this.DataContext = this;
 
-
-
-
             list = new ObservableList<int>();
             list.AddRange(new[] { 1, 10, 188 });
-            ItemsView = list.CreateSortedView(x => x, x => x, comparer: Comparer<int>.Default).WithINotifyCollectionChanged();
-
+            ItemsView = list
+                    .ToSynchronizedCoupleView(x => $"({x}, {x}$)")
+                    .ToSynchronizedSingleView()
+                    .WithINotifyCollectionChanged();
 
             BindingOperations.EnableCollectionSynchronization(ItemsView, new object());
+
+            ItemsViewForDataGrid = list
+                    .ToSynchronizedCoupleView(x => new Item($"({x}, {x}&)"))
+                    .ToSynchronizedSingleView()
+                    .WithIListINotifyCollectionChanged();   // for datagrid edittable
+
+            BindingOperations.EnableCollectionSynchronization(ItemsViewForDataGrid, new object());
         }
 
         int adder = 99;
@@ -54,6 +61,17 @@ namespace WpfApp
         protected override void OnClosed(EventArgs e)
         {
             ItemsView.Dispose();
+            ItemsViewForDataGrid.Dispose();
+        }
+
+        public class Item
+        {
+            public string Value { get; set; }
+
+            public Item(string value)
+            {
+                this.Value = value;
+            }
         }
     }
 }

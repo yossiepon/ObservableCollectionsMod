@@ -10,11 +10,32 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
             <ColumnDefinition />
+            <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
         <ListView ItemsSource="{Binding ItemsView}"></ListView>
-        
-        <Button Grid.Column="1" Click="Button_Click">Insert</Button>
+
+        <DataGrid
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                CanUserDeleteRows="False"
+                CanUserResizeRows="False"
+                SelectionUnit="FullRow"
+                RowHeaderWidth="0"
+                GridLinesVisibility="Horizontal"
+                VirtualizingPanel.ScrollUnit="Pixel"
+                VerticalScrollBarVisibility="Visible"
+                Grid.Column="1"
+                ItemsSource="{Binding ItemsViewForDataGrid}">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Test" Width="240"
+                    Binding="{Binding Value}" />
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+        <Button Grid.Column="2" Click="Button_Click">Insert</Button>
 
     </Grid>
 </Window>
