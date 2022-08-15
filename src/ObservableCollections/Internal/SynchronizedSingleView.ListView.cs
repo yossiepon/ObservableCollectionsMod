@@ -8,12 +8,12 @@ namespace ObservableCollections.Internal
 {
     internal partial class SynchronizedSingleView<T, TView> : ISynchronizedSingleView<T, TView>
     {
-        public ISynchronizedListView<T, TView> WithIListINotifyCollectionChanged()
+        public INotifyCollectionChangedListSynchronizedSingleView<T, TView> WithINotifyCollectionChangedList()
         {
             return new ListView(this);
         }
 
-        class ListView : ISynchronizedListView<T, TView>
+        class ListView : INotifyCollectionChangedListSynchronizedSingleView<T, TView>
         {
             readonly ISynchronizedSingleView<T, TView> parent;
             static readonly PropertyChangedEventArgs CountPropertyChangedEventArgs = new(nameof(Count));
@@ -80,7 +80,7 @@ namespace ObservableCollections.Internal
 
             public void AttachFilter(ISynchronizedViewFilter<T, TView> filter) => parent.AttachFilter(filter);
             public void ResetFilter(Action<T, TView>? resetAction) => parent.ResetFilter(resetAction);
-            public ISynchronizedListView<T, TView> WithIListINotifyCollectionChanged() => this;
+            public INotifyCollectionChangedListSynchronizedSingleView<T, TView> WithINotifyCollectionChangedList() => this;
             public INotifyCollectionChangedSynchronizedSingleView<T, TView> WithINotifyCollectionChanged() => parent.WithINotifyCollectionChanged();
 
             public void Dispose()

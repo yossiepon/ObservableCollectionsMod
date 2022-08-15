@@ -17,14 +17,14 @@ namespace ObservableCollections
         void AttachFilter(ISynchronizedViewFilter<T, TView> filter);
         void ResetFilter(Action<T, TView>? resetAction);
         INotifyCollectionChangedSynchronizedSingleView<T, TView> WithINotifyCollectionChanged();
-        ISynchronizedListView<T, TView> WithIListINotifyCollectionChanged();
+        INotifyCollectionChangedListSynchronizedSingleView<T, TView> WithINotifyCollectionChangedList();
     }
 
     public interface INotifyCollectionChangedSynchronizedSingleView<T, TView> : ISynchronizedSingleView<T, TView>, INotifyCollectionChanged, INotifyPropertyChanged
     {
     }
 
-    public interface ISynchronizedListView<T, TView> : ISynchronizedSingleView<T, TView>, IList, INotifyCollectionChanged, INotifyPropertyChanged
+    public interface INotifyCollectionChangedListSynchronizedSingleView<T, TView> : ISynchronizedSingleView<T, TView>, IList, INotifyCollectionChanged, INotifyPropertyChanged
     {
     }
 }

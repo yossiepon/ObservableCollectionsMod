@@ -60,7 +60,7 @@ namespace ObservableCollections.Internal
         public void AttachFilter(ISynchronizedViewFilter<T, TView> filter) => parent.AttachFilter(filter);
         public void ResetFilter(Action<T, TView>? resetAction) => parent.ResetFilter(resetAction);
         public INotifyCollectionChangedSynchronizedSingleView<T, TView> WithINotifyCollectionChanged() => this;
-        public ISynchronizedListView<T, TView> WithIListINotifyCollectionChanged() => parent.WithIListINotifyCollectionChanged();
+        public INotifyCollectionChangedListSynchronizedSingleView<T, TView> WithINotifyCollectionChangedList() => parent.WithINotifyCollectionChangedList();
 
         public void Dispose()
         {
