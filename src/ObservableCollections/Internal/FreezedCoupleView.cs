@@ -20,11 +20,11 @@ namespace ObservableCollections.Internal
 
         public object SyncRoot { get; } = new object();
 
-        public FreezedCoupleView(IEnumerable<T> source, Func<T, TView> selector, bool reverse)
+        public FreezedCoupleView(IEnumerable<T> source, Func<T, TView> transform, bool reverse)
         {
             this.reverse = reverse;
             this.filter = SynchronizedViewFilter<T, TView>.Null;
-            this.list = source.Select(x => (x, selector(x))).ToList();
+            this.list = source.Select(x => (x, transform(x))).ToList();
         }
 
         public int Count
@@ -121,10 +121,10 @@ namespace ObservableCollections.Internal
 
         public object SyncRoot { get; } = new object();
 
-        public FreezedSortableCoupleView(IEnumerable<T> source, Func<T, TView> selector)
+        public FreezedSortableCoupleView(IEnumerable<T> source, Func<T, TView> transform)
         {
             this.filter = SynchronizedViewFilter<T, TView>.Null;
-            this.array = source.Select(x => (x, selector(x))).ToArray();
+            this.array = source.Select(x => (x, transform(x))).ToArray();
         }
 
         public int Count
@@ -189,11 +189,15 @@ namespace ObservableCollections.Internal
         public void Sort(IComparer<T> valueComparer)
         {
             Array.Sort(array, new TComparer(valueComparer));
+
+            RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<(T, TView)>.Reset());
         }
 
         public void Sort(IComparer<TView> viewComparer)
         {
             Array.Sort(array, new TViewComparer(viewComparer));
+
+            RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<(T, TView)>.Reset());
         }
 
         public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView()

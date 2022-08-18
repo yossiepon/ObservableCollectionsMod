@@ -169,8 +169,11 @@ namespace ObservableCollections.Internal
                         }
                         break;
                     case NotifyCollectionChangedAction.Reset:
-                        list.Clear();
-                        RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<TView>.Reset());
+                        {
+                            list.Clear();
+                            list.AddRange(parent.Select(x => x.Item2));
+                            RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<TView>.Reset());
+                        }
                         break;
                     default:
                         break;
