@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace ObservableCollections
 {
-    public sealed partial class ObservableList<T> : IList<T>, IReadOnlyList<T>, IObservableCollection<T>
+    public sealed partial class ObservableList<T> : IObservableCollectionToCoupleView<T>
     {
         public ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false)
         {

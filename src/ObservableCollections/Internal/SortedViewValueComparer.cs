@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace ObservableCollections.Internal
 {
-    internal class SortedView<T, TKey, TView> : ISynchronizedView<T, TView>
+    internal class SortedViewValueComparer<T, TKey, TView> : ISynchronizedView<T, TView>
         where TKey : notnull
     {
         readonly IObservableCollection<T> source;
@@ -21,7 +21,7 @@ namespace ObservableCollections.Internal
 
         public object SyncRoot { get; } = new object();
 
-        public SortedView(IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<T> comparer)
+        public SortedViewValueComparer(IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<T> comparer)
         {
             this.source = source;
             this.identitySelector = identitySelector;

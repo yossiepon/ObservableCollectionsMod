@@ -10,15 +10,15 @@ namespace ObservableCollections.Internal
     {
         public INotifyCollectionChangedListSynchronizedSingleView<T, TView> WithINotifyCollectionChangedList()
         {
-            return new ListView(this);
+            return new NCCListView(this);
         }
 
-        class ListView : INotifyCollectionChangedListSynchronizedSingleView<T, TView>
+        class NCCListView : INotifyCollectionChangedListSynchronizedSingleView<T, TView>
         {
             readonly ISynchronizedSingleView<T, TView> parent;
             static readonly PropertyChangedEventArgs CountPropertyChangedEventArgs = new(nameof(Count));
 
-            public ListView(ISynchronizedSingleView<T, TView> parent)
+            public NCCListView(ISynchronizedSingleView<T, TView> parent)
             {
                 this.parent = parent;
                 this.parent.RoutingCollectionChanged += Parent_RoutingCollectionChanged;

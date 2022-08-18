@@ -53,7 +53,7 @@ namespace ObservableCollections
         public static ISynchronizedView<T, TView> CreateSortedView<T, TKey, TView>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<T> comparer)
             where TKey : notnull
         {
-            return new SortedView<T, TKey, TView>(source, identitySelector, transform, comparer);
+            return new SortedViewValueComparer<T, TKey, TView>(source, identitySelector, transform, comparer);
         }
 
         public static ISynchronizedView<T, TView> CreateSortedView<T, TKey, TView>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<TView> viewComparer)

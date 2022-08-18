@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace ObservableCollections
 {
-    public sealed class FreezedList<T> : IReadOnlyList<T>, IFreezedCollection<T>
+    public sealed partial class FreezedList<T> : IReadOnlyList<T>, IFreezedCollection<T>
     {
         readonly IReadOnlyList<T> list;
 
