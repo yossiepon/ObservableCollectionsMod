@@ -26,7 +26,40 @@ namespace ObservableCollections.Internal
 
             private void Parent_RoutingCollectionChanged(in NotifyCollectionChangedEventArgs<TView> e)
             {
-                CollectionChanged?.Invoke(this, e.ToStandardEventArgs());
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        if (e.IsSingleItem)
+                        {
+                            CollectionChanged?.Invoke(this, e.ToStandardEventArgs());
+                        }
+                        else
+                        {
+                            var newItems = e.NewItems.ToArray();
+                            for (int i = 0; i < newItems.Length; i++)
+                            {
+                                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(e.Action, newItems[i], e.NewStartingIndex + i));
+                            }
+                        }
+                        break;
+                    case NotifyCollectionChangedAction.Remove:
+                        if (e.IsSingleItem)
+                        {
+                            CollectionChanged?.Invoke(this, e.ToStandardEventArgs());
+                        }
+                        else
+                        {
+                            var oldItems = e.OldItems.ToArray();
+                            for (int i = oldItems.Length - 1; i >= 0; i++)
+                            {
+                                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(e.Action, oldItems[i], e.OldStartingIndex + i));
+                            }
+                        }
+                        break;
+                    default:
+                        CollectionChanged?.Invoke(this, e.ToStandardEventArgs());
+                        break;
+                }
 
                 switch (e.Action)
                 {
