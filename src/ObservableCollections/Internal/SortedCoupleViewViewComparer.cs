@@ -1,4 +1,7 @@
-﻿using System;
+﻿#if DEBUG
+using NLog;
+#endif
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -9,6 +12,10 @@ namespace ObservableCollections.Internal
     internal class SortedCoupleViewViewComparer<T, TKey, TView> : ISynchronizedCoupleView<T, TView>
             where TKey : notnull
     {
+#if DEBUG
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+#endif
+
         readonly IObservableCollection<T> source;
         readonly Func<T, TView> transform;
         readonly Func<T, TKey> identitySelector;
@@ -19,17 +26,20 @@ namespace ObservableCollections.Internal
 
         ISynchronizedViewFilter<T, TView> filter;
 
+        private bool disposeElement;
+
         public event NotifyCollectionChangedEventHandler<(T, TView)>? RoutingCollectionChanged;
         public event Action<NotifyCollectionChangedAction>? CollectionStateChanged;
 
         public object SyncRoot { get; } = new object();
 
-        public SortedCoupleViewViewComparer(IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<TView> comparer)
+        public SortedCoupleViewViewComparer(IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<TView> comparer, bool disposeElement)
         {
             this.source = source;
             this.identitySelector = identitySelector;
             this.transform = transform;
             this.filter = SynchronizedViewFilter<T, TView>.Null;
+            this.disposeElement = disposeElement;
             lock (source.SyncRoot)
             {
                 this.comparer = new Comparer(comparer);
@@ -88,11 +98,11 @@ namespace ObservableCollections.Internal
             }
         }
 
-        public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView()
+        public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView(bool disposeParent, bool disposeElement)
         {
             lock (SyncRoot)
             {
-                return new SynchronizedSingleView<T, TView>(this);
+                return new SynchronizedSingleView<T, TView>(this, disposeParent, disposeElement);
             }
         }
 
@@ -123,7 +133,34 @@ namespace ObservableCollections.Internal
 
         public void Dispose()
         {
+#if DEBUG
+            logger.Trace("{0} disposing SortedCoupleView (ViewComparer)...", this.GetType().FullName);
+#endif
+
             this.source.CollectionChanged -= SourceCollectionChanged;
+
+            if (this.disposeElement)
+            {
+#if DEBUG
+                logger.Trace("{0} (T, TView) elements disposing...", this.GetType().FullName);
+#endif
+
+                foreach (var item in this.valueList)
+                {
+                    if (item.View is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+
+#if DEBUG
+                logger.Trace("{0} (T, TView) elements disposed.", this.GetType().FullName);
+#endif
+            }
+
+#if DEBUG
+            logger.Trace("{0} SortedCoupleView (ViewComparer) disposed.", this.GetType().FullName);
+#endif
         }
 
         private void SourceCollectionChanged(in NotifyCollectionChangedEventArgs<T> e)

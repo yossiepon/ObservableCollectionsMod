@@ -8,14 +8,14 @@ namespace ObservableCollections
 {
     public interface IObservableCollectionToCoupleView<T>
     {
-        ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false);
+        ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false, bool disposeElement = true);
     }
 
     public interface IFreezedCollectionToCoupleView<T> : IEnumerable<T>
     {
-        ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false);
+        ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false, bool disposeElement = true);
 
-        ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<TView>(Func<T, TView> transform);
+        ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<TView>(Func<T, TView> transform, bool disposeElement = true);
     }
 
     public interface ISynchronizedCoupleView<T, TView> : IReadOnlyCollection<(T, TView)>, IDisposable
@@ -28,7 +28,7 @@ namespace ObservableCollections
         void AttachFilter(ISynchronizedViewFilter<T, TView> filter);
         void ResetFilter(Action<T, TView>? resetAction);
         INotifyCollectionChangedSynchronizedCoupleView<T, TView> WithINotifyCollectionChanged();
-        ISynchronizedSingleView<T, TView> ToSynchronizedSingleView();
+        ISynchronizedSingleView<T, TView> ToSynchronizedSingleView(bool disposeParent = true, bool disposeElement = true);
     }
 
     public interface ISortableSynchronizedCoupleView<T, TView> : ISynchronizedCoupleView<T, TView>
@@ -43,57 +43,57 @@ namespace ObservableCollections
 
     public static class SynchronizedCoupleViewExtensions
     {
-        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleView<T, TKey, TView>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<T> comparer)
+        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleView<T, TKey, TView>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<T> comparer, bool disposeElement = true)
             where TKey : notnull
         {
-            return new SortedCoupleViewValueComparer<T, TKey, TView>(source, identitySelector, transform, comparer);
+            return new SortedCoupleViewValueComparer<T, TKey, TView>(source, identitySelector, transform, comparer, disposeElement);
         }
 
-        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleView<T, TKey, TView>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<TView> viewComparer)
+        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleView<T, TKey, TView>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, IComparer<TView> viewComparer, bool disposeElement = true)
             where TKey : notnull
         {
-            return new SortedCoupleViewViewComparer<T, TKey, TView>(source, identitySelector, transform, viewComparer);
+            return new SortedCoupleViewViewComparer<T, TKey, TView>(source, identitySelector, transform, viewComparer, disposeElement);
         }
 
-        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleViewValueComparer<T, TKey, TView, TCompare>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, Func<T, TCompare> compareSelector, bool ascending = true)
+        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleViewValueComparer<T, TKey, TView, TCompare>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, Func<T, TCompare> compareSelector, bool ascending = true, bool disposeElement = true)
             where TKey : notnull
         {
-            return source.ToSynchronizedSortedCoupleView(identitySelector, transform, new AnonymousComparer<T, TCompare>(compareSelector, ascending));
+            return source.ToSynchronizedSortedCoupleView(identitySelector, transform, new AnonymousComparer<T, TCompare>(compareSelector, ascending), disposeElement);
         }
 
-        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleViewViewComparer<T, TKey, TView, TCompare>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, Func<TView, TCompare> compareSelector, bool ascending = true)
+        public static ISynchronizedCoupleView<T, TView> ToSynchronizedSortedCoupleViewViewComparer<T, TKey, TView, TCompare>(this IObservableCollection<T> source, Func<T, TKey> identitySelector, Func<T, TView> transform, Func<TView, TCompare> compareSelector, bool ascending = true, bool disposeElement = true)
             where TKey : notnull
         {
-            return source.ToSynchronizedSortedCoupleView(identitySelector, transform, new AnonymousComparer<TView, TCompare>(compareSelector, ascending));
+            return source.ToSynchronizedSortedCoupleView(identitySelector, transform, new AnonymousComparer<TView, TCompare>(compareSelector, ascending), disposeElement);
         }
 
-        public static ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, bool reverse = false)
+        public static ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, bool reverse = false, bool disposeElement = true)
         {
-            return new FreezedCoupleView<T, TView>(source, transform, reverse);
+            return new FreezedCoupleView<T, TView>(source, transform, reverse, disposeElement);
         }
 
-        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform)
+        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, bool disposeElement = true)
         {
-            return new FreezedSortableCoupleView<T, TView>(source, transform);
+            return new FreezedSortableCoupleView<T, TView>(source, transform, disposeElement);
         }
 
-        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, IComparer<T> initialSort)
+        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, IComparer<T> initialSort, bool disposeElement = true)
         {
-            var view = source.ToSynchronizedSortableCoupleView(transform);
+            var view = source.ToSynchronizedSortableCoupleView(transform, disposeElement);
             view.Sort(initialSort);
             return view;
         }
 
-        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, IComparer<TView> initialViewSort)
+        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, IComparer<TView> initialViewSort, bool disposeElement = true)
         {
-            var view = source.ToSynchronizedSortableCoupleView(transform);
+            var view = source.ToSynchronizedSortableCoupleView(transform, disposeElement);
             view.Sort(initialViewSort);
             return view;
         }
 
-        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView, TCompare>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, Func<T, TCompare> initialCompareSelector, bool ascending = true)
+        public static ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<T, TView, TCompare>(this IFreezedCollectionToCoupleView<T> source, Func<T, TView> transform, Func<T, TCompare> initialCompareSelector, bool ascending = true, bool disposeElement = true)
         {
-            var view = source.ToSynchronizedSortableCoupleView(transform);
+            var view = source.ToSynchronizedSortableCoupleView(transform, disposeElement);
             view.Sort(initialCompareSelector, ascending);
             return view;
         }

@@ -1,4 +1,7 @@
-﻿using System;
+﻿#if DEBUG
+using NLog;
+#endif
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -15,6 +18,10 @@ namespace ObservableCollections.Internal
 
         class NCCListView : INotifyCollectionChangedListSynchronizedSingleView<T, TView>
         {
+#if DEBUG
+            private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+#endif
+
             readonly ISynchronizedSingleView<T, TView> parent;
             static readonly PropertyChangedEventArgs CountPropertyChangedEventArgs = new(nameof(Count));
 
@@ -118,8 +125,20 @@ namespace ObservableCollections.Internal
 
             public void Dispose()
             {
+#if DEBUG
+                logger.Trace("{0} disposing NCCListSingleView...", this.GetType().FullName);
+#endif
                 this.parent.RoutingCollectionChanged -= Parent_RoutingCollectionChanged;
+
+#if DEBUG
+                logger.Trace("{0} parent disposing...", this.GetType().FullName);
+#endif
+
                 parent.Dispose();
+
+#if DEBUG
+                logger.Trace("{0} parent and NCCListSingleView disposed.", this.GetType().FullName);
+#endif
             }
 
             public IEnumerator<TView> GetEnumerator() => parent.GetEnumerator();
