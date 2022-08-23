@@ -1,5 +1,8 @@
 ﻿#pragma warning disable CS0067
 
+#if DEBUG
+using NLog;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,21 +13,29 @@ namespace ObservableCollections.Internal
 {
     internal sealed class FreezedCoupleView<T, TView> : ISynchronizedCoupleView<T, TView>
     {
+#if DEBUG
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+#endif
+
         readonly bool reverse;
         readonly List<(T, TView)> list;
 
         ISynchronizedViewFilter<T, TView> filter;
+
+        private readonly bool disposeElement;
 
         public event NotifyCollectionChangedEventHandler<(T, TView)>? RoutingCollectionChanged;
         public event Action<NotifyCollectionChangedAction>? CollectionStateChanged;
 
         public object SyncRoot { get; } = new object();
 
-        public FreezedCoupleView(IEnumerable<T> source, Func<T, TView> transform, bool reverse)
+        public FreezedCoupleView(IEnumerable<T> source, Func<T, TView> transform, bool reverse, bool disposeElement)
         {
-            this.reverse = reverse;
             this.filter = SynchronizedViewFilter<T, TView>.Null;
             this.list = source.Select(x => (x, transform(x))).ToList();
+
+            this.reverse = reverse;
+            this.disposeElement = disposeElement;
         }
 
         public int Count
@@ -96,12 +107,36 @@ namespace ObservableCollections.Internal
 
         public void Dispose()
         {
+#if DEBUG
+            logger.Trace("{0} disposing FreezedCoupleView...", this.GetType().FullName);
+#endif
 
+            if (this.disposeElement)
+            {
+#if DEBUG
+                logger.Trace("{0} (T, TView) elements disposing...", this.GetType().FullName);
+#endif
+
+                foreach (var item in this.list)
+                {
+                    if (item.Item2 is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+#if DEBUG
+                logger.Trace("{0} (T, TView) elements disposed.", this.GetType().FullName);
+#endif
+            }
+
+#if DEBUG
+            logger.Trace("{0} FreezedCoupleView disposed.", this.GetType().FullName);
+#endif
         }
 
-        public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView()
+        public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView(bool disposeParent, bool disposeElement)
         {
-            return new SynchronizedSingleView<T, TView>(this);
+            return new SynchronizedSingleView<T, TView>(this, disposeParent, disposeElement);
         }
 
         public INotifyCollectionChangedSynchronizedCoupleView<T, TView> WithINotifyCollectionChanged()
@@ -112,19 +147,25 @@ namespace ObservableCollections.Internal
 
     internal sealed class FreezedSortableCoupleView<T, TView> : ISortableSynchronizedCoupleView<T, TView>
     {
-        readonly (T, TView)[] array;
+#if DEBUG
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+#endif
 
+        readonly (T, TView)[] array;
         ISynchronizedViewFilter<T, TView> filter;
+
+        private readonly bool disposeElement;
 
         public event NotifyCollectionChangedEventHandler<(T, TView)>? RoutingCollectionChanged;
         public event Action<NotifyCollectionChangedAction>? CollectionStateChanged;
 
         public object SyncRoot { get; } = new object();
 
-        public FreezedSortableCoupleView(IEnumerable<T> source, Func<T, TView> transform)
+        public FreezedSortableCoupleView(IEnumerable<T> source, Func<T, TView> transform, bool disposeElement)
         {
             this.filter = SynchronizedViewFilter<T, TView>.Null;
             this.array = source.Select(x => (x, transform(x))).ToArray();
+            this.disposeElement = disposeElement;
         }
 
         public int Count
@@ -183,10 +224,34 @@ namespace ObservableCollections.Internal
 
         public void Dispose()
         {
+#if DEBUG
+            logger.Trace("{0} disposing FreezedSortableCoupleView...", this.GetType().FullName);
+#endif
 
+            if (this.disposeElement)
+            {
+#if DEBUG
+                logger.Trace("{0} (T, TView) elements disposing...", this.GetType().FullName);
+#endif
+
+                foreach (var item in this.array)
+                {
+                    if (item.Item2 is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+#if DEBUG
+                logger.Trace("{0} (T, TView) elements disposed.", this.GetType().FullName);
+#endif
+            }
+
+#if DEBUG
+            logger.Trace("{0} FreezedSortableCoupleView disposed.", this.GetType().FullName);
+#endif
         }
 
-        public void Sort(IComparer<T> valueComparer)
+            public void Sort(IComparer<T> valueComparer)
         {
             Array.Sort(array, new TComparer(valueComparer));
 
@@ -200,9 +265,9 @@ namespace ObservableCollections.Internal
             RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<(T, TView)>.Reset());
         }
 
-        public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView()
+        public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView(bool disposeParent, bool disposeElement)
         {
-            return new SynchronizedSingleView<T, TView>(this);
+            return new SynchronizedSingleView<T, TView>(this, disposeParent, disposeElement);
         }
 
         public INotifyCollectionChangedSynchronizedCoupleView<T, TView> WithINotifyCollectionChanged()

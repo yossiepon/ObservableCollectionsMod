@@ -8,14 +8,14 @@ namespace ObservableCollections
 {
     public sealed partial class FreezedList<T> : IFreezedCollectionToCoupleView<T>
     {
-        public ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false)
+        public ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false, bool disposeElement = true)
         {
-            return new FreezedCoupleView<T, TView>(list, transform, reverse);
+            return new FreezedCoupleView<T, TView>(list, transform, reverse, disposeElement);
         }
 
-        public ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<TView>(Func<T, TView> transform)
+        public ISortableSynchronizedCoupleView<T, TView> ToSynchronizedSortableCoupleView<TView>(Func<T, TView> transform, bool disposeElement = true)
         {
-            return new FreezedSortableCoupleView<T, TView>(list, transform);
+            return new FreezedSortableCoupleView<T, TView>(list, transform, disposeElement);
         }
     }
 }

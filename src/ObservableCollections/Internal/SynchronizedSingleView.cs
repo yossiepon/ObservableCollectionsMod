@@ -1,4 +1,7 @@
-﻿using System;
+﻿#if DEBUG
+using NLog;
+#endif
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -9,16 +12,25 @@ namespace ObservableCollections.Internal
 {
     internal partial class SynchronizedSingleView<T, TView> : ISynchronizedSingleView<T, TView>
     {
+#if DEBUG
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+#endif
+
         readonly ISynchronizedCoupleView<T, TView> parent;
         readonly List<TView> list;
+
+        private readonly bool disposeParent;
+        private readonly bool disposeElement;
 
         public event NotifyCollectionChangedEventHandler<TView>? RoutingCollectionChanged;
 
         public object SyncRoot { get; }
 
-        public SynchronizedSingleView(ISynchronizedCoupleView<T, TView> parent)
+        public SynchronizedSingleView(ISynchronizedCoupleView<T, TView> parent, bool disposeParent, bool disposeElement)
         {
             this.parent = parent;
+            this.disposeParent = disposeParent;
+            this.disposeElement = disposeElement;
             this.SyncRoot = new object();
             lock (parent.SyncRoot)
             {
@@ -70,7 +82,47 @@ namespace ObservableCollections.Internal
 
         public void Dispose()
         {
+#if DEBUG
+            logger.Trace("{0} disposing SingleView...", this.GetType().FullName);
+#endif
+
             this.parent.RoutingCollectionChanged -= Parent_RoutingCollectionChanged;
+
+            if (this.disposeElement)
+            {
+#if DEBUG
+                logger.Trace("{0} TView elements disposing...", this.GetType().FullName);
+#endif
+
+                foreach (var item in this.list)
+                {
+                    if (item is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+
+#if DEBUG
+                logger.Trace("{0} TView elements disposed.", this.GetType().FullName);
+#endif
+            }
+
+            if (this.disposeParent)
+            {
+#if DEBUG
+                logger.Trace("{0} parent disposing...", this.GetType().FullName);
+#endif
+
+                this.parent.Dispose();
+
+#if DEBUG
+                logger.Trace("{0} parent disposed.", this.GetType().FullName);
+#endif
+            }
+
+#if DEBUG
+            logger.Trace("{0} SingleView disposed.", this.GetType().FullName);
+#endif
         }
 
         private void Parent_RoutingCollectionChanged(in NotifyCollectionChangedEventArgs<(T, TView)> e)

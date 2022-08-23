@@ -1,7 +1,4 @@
-﻿#if DEBUG
-using NLog;
-#endif
-using ObservableCollections.Internal;
+﻿using ObservableCollections.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,42 +10,35 @@ namespace ObservableCollections
 {
     public sealed partial class ObservableList<T> : IObservableCollectionToCoupleView<T>
     {
-        public ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false, bool disposeElement = true)
+        public ISynchronizedCoupleView<T, TView> ToSynchronizedCoupleView<TView>(Func<T, TView> transform, bool reverse = false)
         {
-            return new SynchronizedCoupleView<TView>(this, transform, reverse, disposeElement);
+            return new SynchronizedCoupleView<TView>(this, transform, reverse);
         }
 
         sealed class SynchronizedCoupleView<TView> : ISynchronizedCoupleView<T, TView>
         {
-#if DEBUG
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-#endif
-
             readonly ObservableList<T> source;
-            readonly Func<T, TView> transform;
+            readonly Func<T, TView> selector;
             readonly bool reverse;
             readonly List<(T, TView)> list;
 
             ISynchronizedViewFilter<T, TView> filter;
-
-            private readonly bool disposeElement;
 
             public event NotifyCollectionChangedEventHandler<(T, TView)>? RoutingCollectionChanged;
             public event Action<NotifyCollectionChangedAction>? CollectionStateChanged;
 
             public object SyncRoot { get; }
 
-            public SynchronizedCoupleView(ObservableList<T> source, Func<T, TView> transform, bool reverse)
+            public SynchronizedCoupleView(ObservableList<T> source, Func<T, TView> selector, bool reverse)
             {
                 this.source = source;
-                this.transform = transform;
+                this.selector = selector;
                 this.reverse = reverse;
-                this.disposeElement = disposeElement;
                 this.filter = SynchronizedViewFilter<T, TView>.Null;
                 this.SyncRoot = new object();
                 lock (source.SyncRoot)
                 {
-                    this.list = source.list.Select(x => (x, transform(x))).ToList();
+                    this.list = source.list.Select(x => (x, selector(x))).ToList();
                     this.source.CollectionChanged += SourceCollectionChanged;
                 }
             }
@@ -91,11 +81,11 @@ namespace ObservableCollections
                 }
             }
 
-            public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView(bool disposeParent, bool disposeElement)
+            public ISynchronizedSingleView<T, TView> ToSynchronizedSingleView()
             {
                 lock (SyncRoot)
                 {
-                    return new SynchronizedSingleView<T, TView>(this, disposeParent, disposeElement);
+                    return new SynchronizedSingleView<T, TView>(this);
                 }
             }
 
@@ -138,34 +128,7 @@ namespace ObservableCollections
 
             public void Dispose()
             {
-#if DEBUG
-                logger.Trace("{0} disposing CoupleView...", this.GetType().FullName);
-#endif
-
                 this.source.CollectionChanged -= SourceCollectionChanged;
-
-                if (this.disposeElement)
-                {
-#if DEBUG
-                    logger.Trace("{0} (T, TView) elements disposing...", this.GetType().FullName);
-#endif
-
-                    foreach (var item in this.list)
-                    {
-                        if (item.Item2 is IDisposable disposable)
-                        {
-                            disposable.Dispose();
-                        }
-                    }
-
-#if DEBUG
-                    logger.Trace("{0} (T, TView) elements disposed.", this.GetType().FullName);
-#endif
-                }
-
-#if DEBUG
-                logger.Trace("{0} CoupleView disposed.", this.GetType().FullName);
-#endif
             }
 
             private void SourceCollectionChanged(in NotifyCollectionChangedEventArgs<T> e)
@@ -180,7 +143,7 @@ namespace ObservableCollections
                             {
                                 if (e.IsSingleItem)
                                 {
-                                    var v = (e.NewItem, transform(e.NewItem));
+                                    var v = (e.NewItem, selector(e.NewItem));
                                     list.Add(v);
                                     filter.InvokeOnAdd(v, e);
                                     RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<(T, TView)>.Add(v, e.NewStartingIndex));
@@ -192,7 +155,7 @@ namespace ObservableCollections
                                     var span = e.NewItems;
                                     for (int i = 0; i < span.Length; i++)
                                     {
-                                        var v = (span[i], transform(span[i]));
+                                        var v = (span[i], selector(span[i]));
                                         newArray[i] = v;
                                         filter.InvokeOnAdd(v, e);
                                     }
@@ -205,7 +168,7 @@ namespace ObservableCollections
                             {
                                 if (e.IsSingleItem)
                                 {
-                                    var v = (e.NewItem, transform(e.NewItem));
+                                    var v = (e.NewItem, selector(e.NewItem));
                                     list.Insert(e.NewStartingIndex, v);
                                     filter.InvokeOnAdd(v, e);
                                     RoutingCollectionChanged?.Invoke(NotifyCollectionChangedEventArgs<(T, TView)>.Add(v, e.NewStartingIndex));
@@ -217,7 +180,7 @@ namespace ObservableCollections
                                     var span = e.NewItems;
                                     for (int i = 0; i < span.Length; i++)
                                     {
-                                        var v = (span[i], transform(span[i]));
+                                        var v = (span[i], selector(span[i]));
                                         newArray[i] = v;
                                         filter.InvokeOnAdd(v, e);
                                     }
@@ -258,7 +221,7 @@ namespace ObservableCollections
                         case NotifyCollectionChangedAction.Replace:
                             // ObservableList does not support replace range
                             {
-                                var v = (e.NewItem, transform(e.NewItem));
+                                var v = (e.NewItem, selector(e.NewItem));
 
                                 var oldItem = list[e.NewStartingIndex];
                                 list[e.NewStartingIndex] = v;
